@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="A premium, state-of-the-art interactive personal finance and expense dashboard for tracking categories, monthly budgets, weekly trends, payment methods, and savings.">
+    <title>AeroFinance - Premium Expense Analytics Dashboard</title>
+    <!-- Google Fonts: Plus Jakarta Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom Style Sheet -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="glow-bg"></div>
+    
+    <div class="app-container">
+        <!-- Sidebar Navigation & Budget Tracker -->
+        <aside class="app-sidebar">
+            <div class="brand">
+                <i class="fa-solid fa-compass-drafting brand-logo"></i>
+                <span class="brand-name">AeroFinance</span>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <a href="#" class="nav-item active"><i class="fa-solid fa-chart-line"></i> Dashboard</a>
+                <a href="#transactions-section" class="nav-item"><i class="fa-solid fa-list-ul"></i> Transaction Log</a>
+            </nav>
+            
+            <!-- Budget Tracker Card -->
+            <div class="sidebar-card budget-card">
+                <div class="budget-header">
+                    <h3>Monthly Budget</h3>
+                    <button class="icon-btn" id="edit-budget-btn" title="Edit Budget"><i class="fa-solid fa-pen-to-square"></i></button>
+                </div>
+                <div class="budget-value">
+                    <span id="budget-amount">₹20,000</span>
+                </div>
+                <div class="progress-bar-container">
+                    <div class="progress-bar" id="budget-progress"></div>
+                </div>
+                <div class="budget-footer">
+                    <span>Spent: <strong id="budget-spent">₹0</strong></span>
+                    <span>Remaining: <strong id="budget-remaining">₹0</strong></span>
+                </div>
+                <div class="budget-status-alert" id="budget-alert" style="display: none;">
+                    <i class="fa-solid fa-triangle-exclamation"></i> Budget limit exceeded!
+                </div>
+            </div>
+
+            <!-- Quick Data Info -->
+            <div class="sidebar-card info-card">
+                <h4>Dataset Location</h4>
+                <div class="path-box" title="C:\Users\User\Downloads\expense\expense_data_1.csv">
+                    <i class="fa-solid fa-file-csv"></i> expense_data_1.csv
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="app-main">
+            <!-- Header -->
+            <header class="app-header">
+                <div class="header-title">
+                    <h1>Expense Analytics Dashboard</h1>
+                    <p class="subtitle">Real-time financial analysis of your personal expenses</p>
+                </div>
+
+            </header>
+
+            <!-- Summary KPI Grid -->
+            <section class="summary-grid">
+                <div class="kpi-card income">
+                    <div class="kpi-icon"><i class="fa-solid fa-arrow-trend-up"></i></div>
+                    <div class="kpi-details">
+                        <span class="kpi-label">Total Income</span>
+                        <h2 class="kpi-value" id="kpi-total-income">₹0.00</h2>
+                    </div>
+                </div>
+                
+                <div class="kpi-card expense">
+                    <div class="kpi-icon"><i class="fa-solid fa-arrow-trend-down"></i></div>
+                    <div class="kpi-details">
+                        <span class="kpi-label">Total Expenses</span>
+                        <h2 class="kpi-value" id="kpi-total-expense">₹0.00</h2>
+                    </div>
+                </div>
+
+                <div class="kpi-card savings">
+                    <div class="kpi-icon"><i class="fa-solid fa-wallet"></i></div>
+                    <div class="kpi-details">
+                        <span class="kpi-label">Net Savings</span>
+                        <h2 class="kpi-value" id="kpi-total-savings">₹0.00</h2>
+                    </div>
+                </div>
+
+                <div class="kpi-card top-cat">
+                    <div class="kpi-icon"><i class="fa-solid fa-pizza-slice"></i></div>
+                    <div class="kpi-details">
+                        <span class="kpi-label">Top Spending Category</span>
+                        <h2 class="kpi-value" id="kpi-top-category">Food</h2>
+                        <span class="kpi-subtext" id="kpi-top-category-amount">₹0.00</span>
+                    </div>
+                </div>
+                
+                <div class="kpi-card pm-freq">
+                    <div class="kpi-icon"><i class="fa-solid fa-credit-card"></i></div>
+                    <div class="kpi-details">
+                        <span class="kpi-label">Frequent Payment Method</span>
+                        <h2 class="kpi-value" id="kpi-payment-method">UPI</h2>
+                        <span class="kpi-subtext" id="kpi-payment-method-count">0 txns</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Charts Section Grid -->
+            <section class="charts-grid">
+                <!-- Row 1: Mapped Category & Monthly Trends -->
+                <div class="chart-card glass-panel col-span-2">
+                    <div class="chart-header">
+                        <h3>Monthly Expense & Income Trends</h3>
+                        <p class="chart-subtitle">Comparison of monthly income, spending, and savings</p>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="monthlyChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="chart-card glass-panel">
+                    <div class="chart-header">
+                        <h3>Spending by Category</h3>
+                        <p class="chart-subtitle">Normalized standard category breakdown</p>
+                    </div>
+                    <div class="chart-container donut-container">
+                        <canvas id="categoryChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Row 2: Weekly Spending & Payment Methods -->
+                <div class="chart-card glass-panel">
+                    <div class="chart-header">
+                        <h3>Weekly Spending Trend</h3>
+                        <p class="chart-subtitle">Weekly expenditure patterns</p>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="weeklyChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="chart-card glass-panel">
+                    <div class="chart-header">
+                        <h3>Payment Methods</h3>
+                        <p class="chart-subtitle">Total amount spent by payment instrument</p>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="paymentMethodChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Row 3: Daily Trends & Top Spends -->
+                <div class="chart-card glass-panel">
+                    <div class="chart-header">
+                        <h3>Daily Spending Trend</h3>
+                        <p class="chart-subtitle">Aggregate spending by day of the week</p>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="dailyChart"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Transactions List Section -->
+            <section id="transactions-section" class="transactions-section glass-panel">
+                <div class="section-header">
+                    <div class="title-area">
+                        <h2>Transaction Log</h2>
+                        <p class="subtitle">Complete history of financial records</p>
+                    </div>
+                    
+                    <div class="filter-controls">
+                        <div class="control-group search-box">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                            <input type="text" id="txn-search" placeholder="Search note, category, method...">
+                        </div>
+                        
+                        <div class="control-group">
+                            <select id="txn-filter-category">
+                                <option value="All">All Categories</option>
+                                <option value="Food">Food</option>
+                                <option value="Shopping">Shopping</option>
+                                <option value="Transport">Transport</option>
+                                <option value="Entertainment">Entertainment</option>
+                                <option value="Bills">Bills</option>
+                                <option value="Healthcare">Healthcare</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                        
+                        <div class="control-group">
+                            <select id="txn-filter-type">
+                                <option value="All">All Types</option>
+                                <option value="Expense">Expense Only</option>
+                                <option value="Income">Income Only</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="txn-table">
+                        <thead>
+                            <tr>
+                                <th class="sortable" data-sort="Date">Date <i class="fa-solid fa-sort"></i></th>
+                                <th>Type</th>
+                                <th class="sortable" data-sort="Category">Category</th>
+                                <th>Subcategory / Raw Category</th>
+                                <th>Payment Method</th>
+                                <th>Notes</th>
+                                <th class="sortable text-right" data-sort="Amount">Amount (INR) <i class="fa-solid fa-sort"></i></th>
+                            </tr>
+                        </thead>
+                        <tbody id="txn-table-body">
+                            <!-- Populated dynamically via JS -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="pagination-footer">
+                    <div class="pagination-info">
+                        Showing <span id="pag-start">1</span> to <span id="pag-end">10</span> of <span id="pag-total">0</span> transactions
+                    </div>
+                    <div class="pagination-buttons">
+                        <button class="btn btn-outline" id="prev-page-btn"><i class="fa-solid fa-chevron-left"></i> Previous</button>
+                        <span class="page-indicator">Page <span id="current-page">1</span> of <span id="total-pages">1</span></span>
+                        <button class="btn btn-outline" id="next-page-btn">Next <i class="fa-solid fa-chevron-right"></i></button>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Modal Dialogs -->
+
+
+    <!-- Edit Budget Modal -->
+    <div class="modal-overlay" id="budget-modal">
+        <div class="modal-box glass-panel">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-wallet"></i> Edit Monthly Budget</h3>
+                <button class="modal-close-btn" id="close-budget-modal-btn"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form id="edit-budget-form">
+                <div class="form-group">
+                    <label for="budget-input">Monthly Budget Amount (₹)</label>
+                    <input type="number" id="budget-input" step="500" min="1000" placeholder="20000" required>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline" id="cancel-budget-modal-btn">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Update Budget</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Custom Script -->
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
